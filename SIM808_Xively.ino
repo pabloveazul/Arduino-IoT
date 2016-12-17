@@ -1,5 +1,7 @@
 #include <SoftwareSerial.h>
-#include <OneWire.h> 
+#include <sensors.h>
+#include <input_output.h>
+#include <sim.h>
 SoftwareSerial SIM808(9, 10);
 
 //Xively info:
@@ -9,111 +11,6 @@ SoftwareSerial SIM808(9, 10);
 String ctlZ= "\x1A" ;
 bool simEnabled = false;
 
-int DS18S20_Pin = 2; //DS18S20 Signal pin on digital 2
-OneWire ds(DS18S20_Pin); // on digital pin 2
-
-float getTemp(){
- //returns the temperature from one DS18S20 in DEG Celsius
- byte data[12];
- byte addr[8];
-
- if ( !ds.search(addr)) {
-   //no more sensors on chain, reset search
-   ds.reset_search();
-   return -1000;
- }
- if ( OneWire::crc8( addr, 7) != addr[7]) {
-   Serial.println("CRC");
-   return -1000;
- }
- if ( addr[0] != 0x10 && addr[0] != 0x28) {
-   Serial.print("not reco");
-   return -1000;
- }
- ds.reset();
- ds.select(addr);
- ds.write(0x44,1); // start conversion, with parasite power on at the end
-
- byte present = ds.reset();
- ds.select(addr);  
- ds.write(0xBE); // Read Scratchpad
-
- for (int i = 0; i < 9; i++) { // we need 9 bytes
-  data[i] = ds.read();
- }
- 
- ds.reset_search();
- byte MSB = data[1];
- byte LSB = data[0];
-
- float tempRead = ((MSB << 8) | LSB); //using two's compliment
- float TemperatureSum = tempRead / 16;
- return TemperatureSum;
-}
-
-
-bool fine(char c){
-  return (c != '\r');
-}
-
-String simpleRead(){
-  String answer = "";
-  while(SIM808.available()>0){
-    char c = SIM808.read();
-    if(fine(c)) answer += c;
-    delay(20);
-  }
-  return answer;
-}
-
-bool expectedAnswer(String message, String expectedResult, int timeDelay = 300){
-  SIM808.println(message);
-  delay(timeDelay);
-  String reponse = simpleRead();
-  bool value = reponse.equals(message+"\n"+expectedResult);
-  /*if(not value){
-    Serial.println("Fail: received answer equals to : ");
-    Serial.println("----------------------------------");
-    Serial.print(reponse);
-    Serial.println("----------------------------------");
-    Serial.println("expected result equals to : ");
-    Serial.println("----------------------------------");
-    Serial.print(expectedResult);
-    Serial.println("----------------------------------");
-    
-  }*/
-  return value;
-}
-
-
-
-void sendSimpleMessage(String message, int timeDelay = 200){
-  SIM808.println(message);
-  delay(timeDelay);
-}
-
-
-String getReponseFrom(String message,int timeDelay=300){
-  SIM808.println(message);
-  delay(timeDelay);
-  String reponse = simpleRead();
-  return reponse;
-}
-
-void sendSMS(String number, String message){
-  if(expectedAnswer("AT+CMGF=1","OK\n")){
-    Serial.println("Inside SMS mode...");
-    delay(50);
-  }
-  String introNumber = "AT+CMGS=\"" +  number + "\"";
-  sendSimpleMessage(introNumber);
-  if(expectedAnswer(message+ctlZ,"> "+message+"\n"+"> \n"+"+CMGS: 28\n\nOK\n")) 
-  { Serial.println("Message correctly sent");}
-    
-  else {
-    Serial.println("Error : Message not sent");
-  }
-}
 
 bool connectToXively(){
   String cipStatus = getReponseFrom("AT+CIPSTATUS",1000);
@@ -146,37 +43,6 @@ bool connectToXively(){
     Serial.println(cipStatus);
     return false;
   }
-}
-
-void UnlockSIM(){
-  String pinState = getReponseFrom("AT+CPIN?",1000);
-  String pinLocked = "AT+CPIN?\n+CPIN: SIM PIN\n\nOK\n";
-  String pinUnlocked = "AT+CPIN?\n+CPIN: READY\n\nOK\n";
-  if(pinState.equals(pinUnlocked)){
-    simEnabled = true;
-    /*Serial.println("Sim already unlocked");*/
-  } else if(pinState.equals(pinLocked)){
-    /*Serial.println("Pin Locked, Unlocking...");*/
-    if(expectedAnswer("AT+CPIN=1234","OK\n\n+CPIN: READY\n\nCall Ready\n\nSMS Ready\n",7000)){
-      Serial.println("SIM Ready");
-      simEnabled = true;
-      delay(5000);
-      Serial.println(simpleRead());
-    }
-  } else {
-    Serial.println("Error SIM:");
-    Serial.println(pinState);
-  }
-  
-}
-
-int getLength(int n){
-  int cnt = 1;
-  while(n >= 10){
-    n/= 10;
-    cnt++;
-  }
-  return cnt;
 }
 
 bool internetUp(){
@@ -249,14 +115,11 @@ void setup(){
   if(expectedAnswer("AT","OK\n")){
     Serial.println("GPRS AT ");
   }
-  /*if(expectedAnswer("AT+CPIN=?","OK\n")){
-    Serial.println("Unlocking PIN...");
-  }*/
+ 
   UnlockSIM();
   
   if(simEnabled){
-    /*sendSMS("+33622811856","Wena pelao"); 
-    delay(300);*/
+    
     
     internetUp(); //lift internet connection
     delay(200);
