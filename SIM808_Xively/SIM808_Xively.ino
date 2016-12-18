@@ -1,19 +1,19 @@
 #include <SoftwareSerial.h>
-#include <sensors.h>
-#include <input_output.h>
-#include <sim.h>
-SoftwareSerial SIM808(9, 10);
+#include "sensors.h"
+#include "input_output.h"
+#include "sim.h"
+
 
 //Xively info:
 #define APIKEY "F5k6VfJlhMhLE7MQwmsqJI4tg7W3ClAPa5fRjclsrvNLnIH0"
 #define FEEDID "673950585"
 #define USERAGENT "Divale"
-String ctlZ= "\x1A" ;
-bool simEnabled = false;
+
+
 
 
 bool connectToXively(){
-  String cipStatus = getReponseFrom("AT+CIPSTATUS",1000);
+  String cipStatus = getReponseFrom("AT+CIPSTATUS",300);
   String Closed = "AT+CIPSTATUS\nOK\n\nSTATE: TCP CLOSED\n";
   String Connected = "AT+CIPSTATUS\nOK\n\nSTATE: CONNECT OK\n";
   String Stat = "AT+CIPSTATUS\nOK\n\nSTATE: IP STATUS\n";
@@ -25,7 +25,7 @@ bool connectToXively(){
   else if (cipStatus.equals(Stat) or cipStatus.equals(Rara)){
     Serial.println("Connecting x.api");
     delay(100);
-    if(expectedAnswer("AT+CIPSTART=\"TCP\",\"api.xively.com\",\"80\"","OK\n\nCONNECT OK\n",5000)){
+    if(expectedAnswer("AT+CIPSTART=\"TCP\",\"api.xively.com\",\"80\"","OK\n\nCONNECT OK\n",400)){
       Serial.println("Done");
       return true;
     }
@@ -33,7 +33,7 @@ bool connectToXively(){
   else if (cipStatus.equals(Closed)){
     Serial.println("Reconnecting x.api");
     delay(100);
-    if(expectedAnswer("AT+CIPSTART=\"TCP\",\"api.xively.com\",\"80\"","OK\n\nCONNECT OK\n",5000)){
+    if(expectedAnswer("AT+CIPSTART=\"TCP\",\"api.xively.com\",\"80\"","OK\n\nCONNECT OK\n",400)){
       Serial.println("Done");
       return true;
     }   
@@ -46,29 +46,34 @@ bool connectToXively(){
 }
 
 bool internetUp(){
-    if(expectedAnswer("AT+CIPSHUT","SHUT OK\n",1000)){
-      Serial.println("SHUT");   
+    if(expectedAnswer("AT+CIPSHUT","SHUT OK\n",400)){
+      Serial.println("Shut down OK");   
     }  
     else{return false;}
-    if(expectedAnswer("AT+CIPSTATUS","OK\n\nSTATE: IP INITIAL\n",1000)){
-      Serial.println("IS");   
+    if(expectedAnswer("AT+CIPSTATUS","OK\n\nSTATE: IP INITIAL\n",400)){
+      Serial.println("IP initial State");   
     }
     else{return false;}
-    if(expectedAnswer("AT+CIPMUX=0","OK\n",1000)){
+    if(expectedAnswer("AT+CIPMUX=0","OK\n",400)){
       Serial.println("MUX=0");
     }
     else{return false;}
-    if(expectedAnswer("AT+CSTT=free","OK\n",5000)){
-      Serial.println("free APN");
+    if(expectedAnswer("AT+CSTT=free","OK\n",1000)){
+      Serial.println("Connected to free APN");
     }
     else{return false;}
-    if(expectedAnswer("AT+CIICR","OK\n",5000)){
-      Serial.println("ciicr.ok");
+    if(expectedAnswer("AT+CIICR","OK\n",1000)){
+      Serial.println("Connection up");
       String IP= getReponseFrom("AT+CIFSR");
       Serial.print("IP : ");
       Serial.println(IP);
     }
     else{return false;}
+    if(expectedAnswer("AT+CIPQSEND=1","OK\n",400)){
+      Serial.println("Quick Send OK");
+    }
+    else{return false;}
+    
 }
 
 void dataToChannel(float data, String channel){
@@ -106,8 +111,8 @@ void dataToChannel(float data, String channel){
 }
 
 void setup(){
-  pinMode(9, INPUT);
-  pinMode(10, OUTPUT);
+  pinMode(10, INPUT);
+  pinMode(11, OUTPUT);
   SIM808.begin(9600);   
   Serial.begin(9600);   
 
@@ -124,7 +129,7 @@ void setup(){
     internetUp(); //lift internet connection
     delay(200);
 
-    if(expectedAnswer("AT+CIPSTART=\"TCP\",\"api.xively.com\",\"80\"","OK\n\nCONNECT OK\n",5000)){
+    if(expectedAnswer("AT+CIPSTART=\"TCP\",\"api.xively.com\",\"80\"","OK\n\nCONNECT OK\n",400)){
       Serial.println("Connection x.api");
     }
 
