@@ -11,7 +11,13 @@ int LIS331 = 0x19;
 #define Power_Register 00100111 // Power Control Register
 
 float getAccelerationX(){
+<<<<<<< HEAD
   float A
+=======
+  float A;
+  float A1;
+  Wire.beginTransmission(LIS331);
+>>>>>>> origin/master
   Wire.write(X_Axis_Register_DATAX1);
   Wire.endTransmission(); // Ends the transmission and transmits the data from the two registers
   Wire.requestFrom(LIS331,1); // Request the transmitted two bytes from the two registers
@@ -22,11 +28,21 @@ float getAccelerationX(){
   else{
      A1=-(A1-255.0)/19.0;}
   A=A1;
+<<<<<<< HEAD
   return X;
 }
 
 float getAccelerationY(){
   float A
+=======
+  return A;
+}
+
+float getAccelerationY(){
+  float A;
+  float A1;
+  Wire.beginTransmission(LIS331);
+>>>>>>> origin/master
   Wire.write(Y_Axis_Register_DATAY1);
   Wire.endTransmission(); // Ends the transmission and transmits the data from the two registers
   Wire.requestFrom(LIS331,1); // Request the transmitted two bytes from the two registers
@@ -37,11 +53,21 @@ float getAccelerationY(){
   else{
      A1=-(A1-255.0)/19.0;}
   A=A1;
+<<<<<<< HEAD
   return X;
 }
 
 float getAccelerationZ(){
   float A
+=======
+  return A;
+}
+
+float getAccelerationZ(){
+  float A;
+  float A1;
+  Wire.beginTransmission(LIS331);
+>>>>>>> origin/master
   Wire.write(Z_Axis_Register_DATAZ1);
   Wire.endTransmission(); // Ends the transmission and transmits the data from the two registers
   Wire.requestFrom(LIS331,1); // Request the transmitted two bytes from the two registers
@@ -52,7 +78,11 @@ float getAccelerationZ(){
   else{
      A1=-(A1-255.0)/19.0;}
   A=A1;
+<<<<<<< HEAD
   return X;
+=======
+  return A;
+>>>>>>> origin/master
 }
 
 void lis331SetUp()
