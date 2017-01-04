@@ -2,8 +2,11 @@
 String getLatitude(String data){
 return getValue(data, ',',4);
 }
-String getTime(String data){
+String getLongitude(String data){
 return getValue(data, ',',3);
+}
+String getTime(String data){
+return getValue(data, ',',2);
 }
 String getValue(String data, char separator, int index)
 {
@@ -64,5 +67,17 @@ void loop() {
  SIM808.write(Serial.read());
  if (SIM808.available()>0)
  Serial.write(SIM808.read());
+
+ String n = GPS_Data();
+ Serial.println(n);
+ String Time = getTime(n);
+ String latitude = getLatitude(n);
+ String longitude = getLongitude(n);
+ Serial.print("Lat = ");
+ Serial.println(latitude);
+ Serial.print("Long = ");
+ Serial.println(longitude);
+ Serial.print("Time = ");
+ Serial.println(Time);
  
 }
